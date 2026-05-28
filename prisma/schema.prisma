@@ -1,0 +1,129 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  LEARNER
+  ADMIN
+}
+
+enum TestType {
+  MINI
+  FULL
+}
+
+model User {
+  id            String             @id @default(uuid())
+  email         String             @unique
+  passwordHash  String?            // Nullable for OAuth accounts
+  name          String
+  role          Role               @default(LEARNER)
+  targetScore   Int?               // Milestone: 450, 550, 650, 750, 850
+  currentStreak Int                @default(0)
+  lastActiveAt  DateTime           @default(now())
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  
+  leitnerCards  LeitnerCard[]
+  results       UserResult[]
+  activities    ProgressActivity[]
+}
+
+model Vocabulary {
+  id                String         @id @default(uuid())
+  word              String         @unique
+  partOfSpeech      String
+  translation       String         // Vietnamese translation
+  phonetic          String         // Phonetic IPA spelling
+  audioUrl          String         // S3 link to pronunciation audio
+  contextExampleEn  String         // Context sentence in English
+  contextExampleVi  String         // Vietnamese translation of example
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  
+  leitnerCards      LeitnerCard[]
+}
+
+model LeitnerCard {
+  id           String     @id @default(uuid())
+  userId       String
+  vocabularyId String
+  box          Int        @default(1) // Ranges from 1 to 5
+  nextReviewAt DateTime   @default(now())
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabulary   Vocabulary @relation(fields: [vocabularyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, vocabularyId])
+}
+
+model Question {
+  id             String             @id @default(uuid())
+  text           String             // Rich prompt or sentence
+  optionA        String
+  optionB        String
+  optionC        String
+  optionD        String
+  correctAnswer  String             // "A", "B", "C", or "D"
+  explanationVi  String             // Native Vietnamese grammatical explanation
+  part           Int                // TOEIC Part 1 to 7
+  subSkillTag    String             // Grammatical/Auditory sub-skill (e.g. passive_voice)
+  difficulty     String             // "easy", "medium", "hard"
+  audioUrl       String?            // S3 link for Parts 1-4
+  imageUrl       String?            // S3 link for Part 1 photographs & Part 7 diagrams
+  testSetId      String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  
+  testSet        TestSet?           @relation(fields: [testSetId], references: [id], onDelete: SetNull)
+  activities     ProgressActivity[]
+}
+
+model TestSet {
+  id                 String       @id @default(uuid())
+  title              String
+  type               TestType     @default(FULL)
+  durationMinutes    Int          // 120 mins for Full, 30 mins for Mini
+  totalQuestions     Int          // 200 questions for Full, 30 for Mini
+  conversionGridJson String       // Scaled score raw mapping arrays
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  
+  questions          Question[]
+  results            UserResult[]
+}
+
+model UserResult {
+  id                  String   @id @default(uuid())
+  userId              String
+  testSetId           String
+  rawListeningCorrect Int
+  rawReadingCorrect   Int
+  scaledListeningScore Int
+  scaledReadingScore  Int
+  totalScore          Int
+  answersJson         String   // Key-value map of questionId -> studentAnswer
+  timeSpentSeconds    Int
+  createdAt           DateTime @default(now())
+  
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testSet             TestSet  @relation(fields: [testSetId], references: [id], onDelete: Cascade)
+}
+
+model ProgressActivity {
+  id         String   @id @default(uuid())
+  userId     String
+  questionId String
+  isCorrect  Boolean
+  createdAt  DateTime @default(now())
+  
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
