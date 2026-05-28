@@ -23,11 +23,12 @@ model User {
   passwordHash  String?            // Nullable for OAuth accounts
   name          String
   role          Role               @default(LEARNER)
-  targetScore   Int?               // Milestone: 450, 550, 650, 750, 850
-  currentStreak Int                @default(0)
-  lastActiveAt  DateTime           @default(now())
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  targetScore         Int?               // Milestone: 450, 550, 650, 750, 850
+  onboardingCompleted Boolean            @default(false)
+  currentStreak       Int                @default(0)
+  lastActiveAt        DateTime           @default(now())
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
   
   leitnerCards  LeitnerCard[]
   results       UserResult[]
@@ -64,39 +65,64 @@ model LeitnerCard {
   @@unique([userId, vocabularyId])
 }
 
+model QuestionGroup {
+  id           String     @id @default(uuid())
+  passageText  String?    @db.Text   // Shared reading passage text (Part 6, 7)
+  audioUrl     String?    // Shared listening audio track (Part 3, 4)
+  imageUrl     String?    // Shared diagram/photograph (Part 7)
+  explanation  String?    @db.Text   // Shared passage translation/explanation
+  part         Int        // TOEIC Part 3, 4, 6, 7
+  testSetId    String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  questions    Question[]
+  testSet      TestSet?   @relation(fields: [testSetId], references: [id], onDelete: SetNull)
+
+  @@index([part])
+  @@index([testSetId])
+}
+
 model Question {
-  id             String             @id @default(uuid())
-  text           String             // Rich prompt or sentence
-  optionA        String
-  optionB        String
-  optionC        String
-  optionD        String
-  correctAnswer  String             // "A", "B", "C", or "D"
-  explanationVi  String             // Native Vietnamese grammatical explanation
-  part           Int                // TOEIC Part 1 to 7
-  subSkillTag    String             // Grammatical/Auditory sub-skill (e.g. passive_voice)
-  difficulty     String             // "easy", "medium", "hard"
-  audioUrl       String?            // S3 link for Parts 1-4
-  imageUrl       String?            // S3 link for Part 1 photographs & Part 7 diagrams
-  testSetId      String?
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  id              String             @id @default(uuid())
+  text            String             @db.Text // Rich prompt or sentence
+  optionA         String
+  optionB         String
+  optionC         String
+  optionD         String
+  correctAnswer   String             // "A", "B", "C", or "D"
+  explanationVi   String             @db.Text // Native Vietnamese grammatical explanation
+  part            Int                // TOEIC Part 1 to 7
+  subSkillTag     String             // Grammatical/Auditory sub-skill (e.g. gerunds)
+  difficulty      String             // "easy", "medium", "hard"
+  audioUrl        String?            // S3 link for Parts 1-4
+  imageUrl        String?            // S3 link for Part 1 photographs & Part 7 diagrams
+  testSetId       String?
+  questionGroupId String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
   
-  testSet        TestSet?           @relation(fields: [testSetId], references: [id], onDelete: SetNull)
-  activities     ProgressActivity[]
+  testSet         TestSet?           @relation(fields: [testSetId], references: [id], onDelete: SetNull)
+  questionGroup   QuestionGroup?     @relation(fields: [questionGroupId], references: [id], onDelete: Cascade)
+  activities      ProgressActivity[]
+
+  @@index([part])
+  @@index([questionGroupId])
+  @@index([testSetId])
 }
 
 model TestSet {
-  id                 String       @id @default(uuid())
+  id                 String          @id @default(uuid())
   title              String
-  type               TestType     @default(FULL)
-  durationMinutes    Int          // 120 mins for Full, 30 mins for Mini
-  totalQuestions     Int          // 200 questions for Full, 30 for Mini
-  conversionGridJson String       // Scaled score raw mapping arrays
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  type               TestType        @default(FULL)
+  durationMinutes    Int             // 120 mins for Full, 30 mins for Mini
+  totalQuestions     Int             // 200 questions for Full, 30 for Mini
+  conversionGridJson String          // Scaled score raw mapping arrays
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
   
   questions          Question[]
+  questionGroups     QuestionGroup[]
   results            UserResult[]
 }
 

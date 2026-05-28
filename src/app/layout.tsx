@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   description: "Nền tảng luyện thi TOEIC thông minh dành riêng cho người Việt",
 };
 
+import { NextAuthProvider } from "@/components/providers";
+
 export default function RootLayout({
   children,
 }: {
@@ -26,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="vi" className={`${sans.variable} ${display.variable}`}>
       <body className="font-sans antialiased bg-background text-slate-800">
-        {children}
+        <NextAuthProvider>{children}</NextAuthProvider>
       </body>
     </html>
   );

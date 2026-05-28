@@ -1,13 +1,23 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Compass, CheckCircle2, ArrowRight } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { Compass, CheckCircle2, ArrowRight, AlertCircle } from "lucide-react";
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { data: session, status, update } = useSession();
   const [selectedScore, setSelectedScore] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    // If the user has already completed onboarding, redirect to dashboard
+    if (status === "authenticated" && session?.user && (session.user as any).onboardingCompleted) {
+      router.push("/dashboard");
+    }
+  }, [session, status, router]);
 
   const milestones = [
     { score: 450, title: "Cơ Bản (Graduation)", desc: "Mục tiêu tối thiểu ra trường cho sinh viên đại học không chuyên." },
@@ -17,14 +27,53 @@ export default function OnboardingPage() {
     { score: 850, title: "Đột Phá (Global Firm)", desc: "Chinh phục điểm số cao để làm việc tại các tập đoàn đa quốc gia và global." },
   ];
 
-  const handleOnboarding = () => {
+  const handleOnboarding = async () => {
     if (!selectedScore) return;
     setLoading(true);
+    setError("");
 
-    setTimeout(() => {
+    try {
+      // 1. Call API to persist data to PostgreSQL
+      const response = await fetch("/api/user/onboarding", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ targetScore: selectedScore }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Có lỗi xảy ra trong quá trình lưu dữ liệu.");
+      }
+
+      // 2. Dynamically update local NextAuth session cache
+      await update({
+        targetScore: selectedScore,
+        onboardingCompleted: true,
+      });
+
+      // 3. Route to dashboard and force a refresh to sync shell context
       router.push("/dashboard");
-    }, 800);
+      router.refresh();
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Không thể kết nối đến máy chủ. Vui lòng thử lại.");
+      setLoading(false);
+    }
   };
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="text-center space-y-4">
+          <Compass className="w-10 h-10 text-primary animate-spin mx-auto" />
+          <p className="text-sm text-slate-400 font-semibold">Đang tải cấu hình học tập...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
@@ -41,6 +90,13 @@ export default function OnboardingPage() {
             Lựa chọn điểm số TOEIC bạn đang hướng tới để chúng tôi đề xuất lộ trình và phân tích điểm yếu phù hợp nhất.
           </p>
         </div>
+
+        {error && (
+          <div className="p-4 bg-destructive/10 text-destructive text-sm rounded-xl font-medium border border-destructive/20 flex items-start gap-2.5">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
 
         {/* Milestone Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -61,7 +117,7 @@ export default function OnboardingPage() {
                 )}
               </div>
               <div className="mt-2">
-                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">{m.title}</h4>
+                <h4 className="text-sm font-bold text-slate-700">{m.title}</h4>
                 <p className="text-xs text-slate-400 mt-1">{m.desc}</p>
               </div>
             </div>

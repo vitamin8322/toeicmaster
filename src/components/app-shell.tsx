@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { 
   Menu, X, BookOpen, Flame, Moon, Sun, 
   LayoutDashboard, Compass, Headphones, BookOpenCheck, Landmark
@@ -14,8 +15,14 @@ interface AppShellProps {
 
 export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+
+  // @ts-ignore
+  const targetScore = session?.user?.targetScore || 650;
+  const userName = session?.user?.name || "Minh";
+  const userInitial = userName.charAt(0).toUpperCase();
 
   useEffect(() => {
     // Sync dark mode state
@@ -132,7 +139,7 @@ export default function AppShell({ children }: AppShellProps) {
           <div className="hidden lg:flex items-center gap-2">
             <span className="text-xs text-slate-500 font-medium">Bảng Mục Tiêu:</span>
             <span className="bg-secondary/15 text-secondary dark:bg-secondary/25 px-2.5 py-0.5 rounded-full font-display font-semibold text-sm">
-              Target 650+
+              Target {targetScore}+
             </span>
           </div>
 
@@ -154,8 +161,8 @@ export default function AppShell({ children }: AppShellProps) {
             </button>
             
             {/* User Profile placeholder */}
-            <div className="w-8 h-8 rounded-full bg-primary text-white font-bold flex items-center justify-center text-sm">
-              M
+            <div className="w-8 h-8 rounded-full bg-primary text-white font-bold flex items-center justify-center text-sm" title={userName}>
+              {userInitial}
             </div>
           </div>
         </header>

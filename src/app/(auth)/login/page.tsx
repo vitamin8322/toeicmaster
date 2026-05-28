@@ -25,7 +25,7 @@ export default function LoginPage() {
     });
 
     if (result?.error) {
-      setError("Email hoac mat khau chua chinh xac! Tai khoan mau: learner@toeicmaster.vn / password123");
+      setError("Email hoặc mật khẩu chưa chính xác! Tài khoản mẫu: learner@toeicmaster.vn / password123");
       setLoading(false);
       return;
     }
@@ -41,8 +41,8 @@ export default function LoginPage() {
           <Link href="/" className="font-display text-3xl font-extrabold text-primary inline-block">
             TOEIC<span className="text-secondary">Master</span>
           </Link>
-          <h2 className="text-xl font-bold text-slate-800">Chao Mung Tro Lai!</h2>
-          <p className="text-xs text-slate-400">Dang nhap tai khoan de tiep tuc luyen thi TOEIC.</p>
+          <h2 className="text-xl font-bold text-slate-800">Chào Mừng Trở Lại!</h2>
+          <p className="text-xs text-slate-400">Đăng nhập tài khoản để tiếp tục luyện thi TOEIC.</p>
         </div>
 
         {error && (
@@ -54,7 +54,7 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-              <Mail className="w-4 h-4" /> Dia Chi Email
+              <Mail className="w-4 h-4" /> Địa Chỉ Email
             </label>
             <input
               type="email"
@@ -68,13 +68,13 @@ export default function LoginPage() {
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-              <Lock className="w-4 h-4" /> Mat Khau
+              <Lock className="w-4 h-4" /> Mật Khẩu
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mat khau cua ban"
+              placeholder="Mật khẩu của bạn"
               required
               className="w-full px-4 py-3 rounded-lg border border-slate-200 text-sm focus-ring"
             />
@@ -85,19 +85,19 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-primary text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary/20 hover:opacity-90 transition-all flex items-center justify-center gap-2 focus-ring disabled:opacity-50"
           >
-            {loading ? "Dang xu ly..." : "Dang Nhap"} <ArrowRight className="w-5 h-5" />
+            {loading ? "Đang xử lý..." : "Đăng Nhập"} <ArrowRight className="w-5 h-5" />
           </button>
         </form>
 
         <div className="text-center text-xs text-slate-400 space-y-1 pt-2 border-t border-slate-100">
           <div>
-            Chua co tai khoan?{" "}
+            Chưa có tài khoản?{" "}
             <Link href="/register" className="text-primary font-bold hover:underline">
-              Dang Ky Mien Phi
+              Đăng Ký Miễn Phí
             </Link>
           </div>
           <div>
-            Quen mat khau? <span className="text-slate-500 hover:underline cursor-pointer">Khoi phuc</span>
+            Quên mật khẩu? <span className="text-slate-500 hover:underline cursor-pointer">Khôi phục</span>
           </div>
         </div>
       </div>
