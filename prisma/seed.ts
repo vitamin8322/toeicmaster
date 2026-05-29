@@ -18,7 +18,11 @@ async function main() {
   // 1. Create standard administrator
   const admin = await prisma.user.upsert({
     where: { email: "admin@toeicmaster.vn" },
-    update: {},
+    update: {
+      passwordHash: passwordHash,
+      onboardingCompleted: true,
+      role: "ADMIN",
+    },
     create: {
       email: "admin@toeicmaster.vn",
       name: "Teacher Linh",
@@ -28,11 +32,15 @@ async function main() {
     },
   });
   console.log(`Seeded admin user: ${admin.email}`);
-
+ 
   // 2. Create standard learner
   const learner = await prisma.user.upsert({
     where: { email: "learner@toeicmaster.vn" },
-    update: {},
+    update: {
+      passwordHash: passwordHash,
+      onboardingCompleted: true,
+      role: "LEARNER",
+    },
     create: {
       email: "learner@toeicmaster.vn",
       name: "Minh Dep Trai",
@@ -44,7 +52,7 @@ async function main() {
     },
   });
   console.log(`Seeded learner user: ${learner.email}`);
-
+ 
   // 2.5 Create non-onboarded learner for E2E testing
   const newbie = await prisma.user.upsert({
     where: { email: "newbie@toeicmaster.vn" },
@@ -52,6 +60,7 @@ async function main() {
       targetScore: null,
       onboardingCompleted: false,
       currentStreak: 0,
+      passwordHash: passwordHash,
     },
     create: {
       email: "newbie@toeicmaster.vn",
